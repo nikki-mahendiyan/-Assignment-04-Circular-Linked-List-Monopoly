@@ -1,0 +1,182 @@
+#include <iostream>
+#include <string>
+#include <cstdlib>
+
+using namespace std;
+
+struct Property
+{
+    string name;
+    int cost;
+    string owner;
+    Property* next;
+
+    Property(string n, int c) : name(n), cost(c), owner("None"), next(nullptr) {}
+};
+
+struct Player
+{
+    string name;
+    Property* position;
+};
+
+// Add a property to the end of the circular board
+void add(Property*& head, string name, int cost)
+{
+    Property* node = new Property(name, cost);
+
+    if (head == nullptr)
+    {
+        node->next = node;
+        head = node;
+        return;
+    }
+
+    Property* tail = head;
+    while (tail->next != head)
+    {
+        tail = tail->next;
+    }
+    tail->next = node;
+    node->next = head;
+}
+
+// Returns the property with this name, or nullptr if it is not on the board
+Property* search(Property* head, string name)
+{
+    if (head == nullptr)
+    {
+        return nullptr;
+    }
+
+    Property* cur = head;
+    do
+    {
+        if (cur->name == name)
+        {
+            return cur;
+        }
+        cur = cur->next;
+    } while (cur != head);
+
+    return nullptr;
+}
+
+// Removes the property with this name. Returns false if not found.
+bool remove(Property*& head, string name)
+{
+    if (head == nullptr)
+    {
+        return false;
+    }
+
+    // before starts at the tail so removing the head works too
+    Property* before = head;
+    while (before->next != head)
+    {
+        before = before->next;
+    }
+
+    Property* cur = head;
+    do
+    {
+        if (cur->name == name)
+        {
+            if (cur->next == cur)
+            {
+                head = nullptr;     // it was the only property
+            }
+            else
+            {
+                before->next = cur->next;
+                if (cur == head)
+                {
+                    head = cur->next;
+                }
+            }
+            delete cur;
+            return true;
+        }
+        before = cur;
+        cur = cur->next;
+    } while (cur != head);
+
+    return false;
+}
+
+// The last property points back to the first, so this wraps automatically
+Property* move(Property* position, int steps)
+{
+    for (int i = 0; i < steps; i++)
+    {
+        position = position->next;
+    }
+    return position;
+}
+
+void print(Property* head)
+{
+    Property* cur = head;
+    do
+    {
+        cout << "  " << cur->name << " ($" << cur->cost << ") owner: " << cur->owner << endl;
+        cur = cur->next;
+    } while (cur != head);
+}
+
+void takeTurn(Player& player)
+{
+    int roll = rand() % 6 + 1;
+    player.position = move(player.position, roll);
+    Property* spot = player.position;
+
+    cout << player.name << " rolled " << roll << " and landed on " << spot->name;
+
+    if (spot->owner == "None")
+    {
+        spot->owner = player.name;
+        cout << ". Bought it for $" << spot->cost << endl;
+    }
+    else
+    {
+        cout << ". Already owned by " << spot->owner << ", can't buy it" << endl;
+    }
+}
+
+int main()
+{
+    srand(3);
+
+    Property* board = nullptr;
+
+    add(board, "Mediterranean Ave", 60);
+    add(board, "Baltic Ave", 60);
+    add(board, "Reading Railroad", 200);
+    add(board, "Oriental Ave", 100);
+    add(board, "Vermont Ave", 100);
+    add(board, "St. Charles Place", 140);
+    add(board, "Virginia Ave", 160);
+    add(board, "Park Place", 350);
+    add(board, "Boardwalk", 400);
+    add(board, "Water Works", 150);
+
+    Player alice = {"Alice", board};
+    Player bob = {"Bob", board};
+
+    for (int round = 1; round <= 10; round++)
+    {
+        cout << "Round " << round << endl;
+        takeTurn(alice);
+        takeTurn(bob);
+    }
+
+    cout << "\nFinal board:" << endl;
+    print(board);
+
+    cout << "\nPark Place is owned by: " << search(board, "Park Place")->owner << endl;
+
+    while (board != nullptr)
+    {
+        remove(board, board->name);
+    }
+}
