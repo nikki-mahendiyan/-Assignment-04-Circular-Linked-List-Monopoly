@@ -1,0 +1,149 @@
+#include <iostream>
+
+using namespace std;
+
+struct Node
+{
+    int value;
+    Node* next;
+    Node* prev;
+
+    Node(int v, Node* n) : value(v), next(n), prev(nullptr) {}
+};
+
+// Add a value to the end of the list
+void add(Node*& head, int value)
+{
+    Node* node = new Node(value, nullptr);
+
+    if (head == nullptr)
+    {
+        node->next = node;
+        node->prev = node;
+        head = node;
+        return;
+    }
+
+    Node* tail = head->prev;
+    node->next = head;
+    node->prev = tail;
+    tail->next = node;
+    head->prev = node;
+}
+
+// Returns true if the value is in the list
+bool search(Node* head, int value)
+{
+    if (head == nullptr)
+    {
+        return false;
+    }
+
+    Node* cur = head;
+    do
+    {
+        if (cur->value == value)
+        {
+            return true;
+        }
+        cur = cur->next;
+    } while (cur != head);
+
+    return false;
+}
+
+// Removes the first node with this value. Returns false if not found.
+bool remove(Node*& head, int value)
+{
+    if (head == nullptr)
+    {
+        return false;
+    }
+
+    Node* cur = head;
+    do
+    {
+        if (cur->value == value)
+        {
+            if (cur->next == cur)
+            {
+                head = nullptr;     // it was the only node
+            }
+            else
+            {
+                cur->prev->next = cur->next;
+                cur->next->prev = cur->prev;
+                if (cur == head)
+                {
+                    head = cur->next;
+                }
+            }
+            delete cur;
+            return true;
+        }
+        cur = cur->next;
+    } while (cur != head);
+
+    return false;
+}
+
+void print(Node* head)
+{
+    if (head != nullptr)
+    {
+        Node* cur = head;
+        do
+        {
+            cout << cur->value << " ";
+            cur = cur->next;
+        } while (cur != head);
+    }
+    cout << endl;
+}
+
+int main()
+{
+    Node* first = new Node(100, nullptr);
+    Node* second = new Node(200, nullptr);
+    Node* third = new Node(300, nullptr);
+
+    first->next = second;
+    second->next = third;
+    third->next = first;
+
+    first->prev = third;
+    second->prev = first; 
+    third->prev = second;
+
+    Node* chain = first;
+
+    cout << chain->next->next->next->value;
+    cout << first->next->prev->value;
+    cout << endl;
+
+    // Tests, using the list built above
+    Node* head = first;
+
+    print(head);                        // 100 200 300
+
+    add(head, 400);
+    print(head);                        // 100 200 300 400
+
+    cout << search(head, 300) << endl;  // 1
+    cout << search(head, 999) << endl;  // 0
+
+    cout << remove(head, 200) << endl;  // 1 (middle)
+    print(head);                        // 100 300 400
+
+    cout << remove(head, 100) << endl;  // 1 (first)
+    print(head);                        // 300 400
+
+    cout << remove(head, 400) << endl;  // 1 (last)
+    print(head);                        // 300
+
+    cout << remove(head, 999) << endl;  // 0 (not in list)
+
+    cout << remove(head, 300) << endl;  // 1 (only node)
+    print(head);                        // (empty line)
+    cout << search(head, 300) << endl;  // 0 (empty list)
+}
