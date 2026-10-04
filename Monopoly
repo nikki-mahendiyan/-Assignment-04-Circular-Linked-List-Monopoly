@@ -17,6 +17,7 @@ struct Property
 struct Player
 {
     string name;
+    int money;
     Property* position;
 };
 
@@ -124,7 +125,8 @@ void print(Property* head)
     } while (cur != head);
 }
 
-void takeTurn(Player& player)
+// other is the opponent, so rent can be paid to them
+void takeTurn(Player& player, Player& other)
 {
     int roll = rand() % 6 + 1;
     player.position = move(player.position, roll);
@@ -134,12 +136,27 @@ void takeTurn(Player& player)
 
     if (spot->owner == "None")
     {
-        spot->owner = player.name;
-        cout << ". Bought it for $" << spot->cost << endl;
+        if (player.money >= spot->cost)
+        {
+            player.money -= spot->cost;
+            spot->owner = player.name;
+            cout << ". Bought it for $" << spot->cost << endl;
+        }
+        else
+        {
+            cout << ". Can't afford it ($" << spot->cost << ")" << endl;
+        }
+    }
+    else if (spot->owner == player.name)
+    {
+        cout << ". They own it, no rent" << endl;
     }
     else
     {
-        cout << ". Already owned by " << spot->owner << ", can't buy it" << endl;
+        int rent = spot->cost / 5;
+        player.money -= rent;
+        other.money += rent;
+        cout << ". Owned by " << spot->owner << ", paid $" << rent << " rent" << endl;
     }
 }
 
@@ -160,20 +177,28 @@ int main()
     add(board, "Boardwalk", 400);
     add(board, "Water Works", 150);
 
-    Player alice = {"Alice", board};
-    Player bob = {"Bob", board};
+    Player alice = {"Alice", 1500, board};
+    Player bob = {"Bob", 1500, board};
 
     for (int round = 1; round <= 10; round++)
     {
         cout << "Round " << round << endl;
-        takeTurn(alice);
-        takeTurn(bob);
+        takeTurn(alice, bob);
+        takeTurn(bob, alice);
     }
 
     cout << "\nFinal board:" << endl;
     print(board);
 
-    cout << "\nPark Place is owned by: " << search(board, "Park Place")->owner << endl;
+    cout << "\nFinal money:" << endl;
+    cout << "  Alice: $" << alice.money << endl;
+    cout << "  Bob: $" << bob.money << endl;
+
+    Property* found = search(board, "Park Place");
+    if (found != nullptr)
+    {
+        cout << "\nPark Place is owned by: " << found->owner << endl;
+    }
 
     while (board != nullptr)
     {
